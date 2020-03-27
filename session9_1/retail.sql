@@ -28,7 +28,7 @@ CREATE TABLE OrderItems (
 
 CREATE TABLE Warehouse (
     WarehouseID INTEGER PRIMARY KEY,
-    Name TEXT,
+    WarehouseName TEXT,
     AddressLine1 TEXT,
     AddressLine2 TEXT,
     AddressLine3 TEXT
@@ -44,7 +44,7 @@ CREATE TABLE Inventory (
 
 CREATE TABLE Supplier (
     SupplierID INTEGER PRIMARY KEY,
-    Name TEXT,
+    SupplierName TEXT,
     AddressLine1 TEXT,
     AddressLine2 TEXT,
     AddressLine3 TEXT,
@@ -73,6 +73,7 @@ CREATE TABLE SupplierOrders(
     FOREIGN KEY (ProductID) REFERENCES Product(ProductID),
     FOREIGN KEY (WarehouseID) REFERENCES Warehouse(WarehouseID)
 );
+
 CREATE TABLE Customer (
     CustomerID INTEGER PRIMARY KEY,
     FirstName TEXT,
@@ -112,3 +113,39 @@ INSERT INTO SupplierOrders VALUES (6002, 5001, 3001, 4002, 99, "DELIVERED", "202
 
 INSERT INTO Customer VALUES (2000, "Gertrud", "Karr", "1709 Woodridge Lane", "Memphis", "TN 38110", "559-309-6624", "gkarr@dayrep.com");
 INSERT INTO Customer VALUES (2001, "Clara", "Tang", "500 Retreat Avenue", "York", "ME 03909", "312-367-6954", "clara_tang@armyspy.com");
+
+/*Write a transaction for a delivery from the Widge supplier which has just arrived at the ABC warehouse and unloaded 99 new Widgets.*/
+BEGIN TRANSACTION;
+UPDATE Inventory SET Quantity = Quantity + 99 WHERE WarehouseID=4001 AND ProductID=3001;
+SELECT Quantity FROM Inventory WHERE WarehouseID=4001 AND ProductID=3001;
+END TRANSACTION;
+
+/*Write a transaction for a Customer order of 500 Wodgets which places an order with the cheapest supplier.*/
+BEGIN TRANSACTION;
+INSERT INTO Orders VALUES (1001, 2000, "2025-01-01 10:00:00", 202501);
+INSERT INTO OrderItems VALUES (1001, 3002, 500);
+INSERT INTO SupplierOrders VALUES (6003, 5002, 3002, 500, "ORDERED", "2025-01-15", "2025-01-21")
+END TRANSACTION;
+
+/*What statements would be needed to update a customer's details to their new address, 
+while still maintaining referential integrity? */
+BEGIN TRANSACTION;
+UPDATE Customer SET AddressLine1 = "...", AddressLine2 = "...", AddressLine3 = "..." WHERE CustomerID = 2000
+END TRANSACTION;
+
+/*What steps would we need to take to delete a product from the Product table, while still maintaining referential integrity? 
+Put all of these statements together into a transaction. What collateral damage would be done if a product was deleted? 
+(In practice, a product will almost never get deleted unless it has never been referenced in any other table.)
+*/
+
+
+/*Either update every transaction involding the product to reference e.g. some "deleted product" id instead, 
+or remove the transactions*/
+/*If we remove an item from the Product table, we would be unable to compute revenue 
+from goods sold and costs from goods bought. That is, any transaction involving that product.*/
+BEGIN TRANSACTION;
+UPDATE Orders ...
+--Probably you would only delete a product if it was not in inventory, i.e. quantity=0
+DELETE FROM Inventory WHERE ProductID = 3001
+DELETE FROM Product WHERE ProductID = 3001
+END TRANSACTION;
